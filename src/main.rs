@@ -10,8 +10,16 @@ struct WordWithCost {
     pub cost: f32,
 }
 
+pub const MAX_ALLOWED_DISTANCE: f32 = 3.0;
+
 fn main() {
     let args: Vec<String> = std::env::args().collect();
+
+    /*
+    let test = distance::get_distance("supplémentaire", "retourner", f32::INFINITY);
+    println!("{:?}", test);
+    return;
+    */
 
     let word = &args[1];
     let dict = read_words();
@@ -20,13 +28,15 @@ fn main() {
     let mut skip_count = 0;
 
     // Compute distances
-    let best_count = 5;
+    let best_count = 3;
     let mut bests: Vec<WordWithCost> = Vec::with_capacity(best_count);
     
     for i in 0..dict.len() {
-        // Get characters
+        // Get lengths
         let word_len = word.chars().count();
         let other_len = dict[i].chars().count();
+
+        let max_dist = if bests.len() == best_count { f32::min(MAX_ALLOWED_DISTANCE, bests[best_count - 1].cost) } else { MAX_ALLOWED_DISTANCE };
 
         // Determine a minimum cost quickly with length
         // It prevents calling get_distance unecessarily, and saves half of the time
@@ -36,23 +46,34 @@ fn main() {
             (other_len - word_len) as f32 * distance::MIN_INSERTION_COST
         };
 
-        if bests.len() == best_count && min_cost >= bests[best_count - 1].cost {
+        if bests.len() == best_count && min_cost >= max_dist {
             skip_count += 1;
             continue; // Not good enough!
         }
 
-        let dist = distance::get_distance(word, &dict[i]);
+        // Compute the actual distance
+        let dist = if bests.len() < best_count {
+            distance::get_distance(word, &dict[i], f32::INFINITY)
+        }
+        else {
+            distance::get_distance(word, &dict[i], max_dist)
+        };
+
+        let float_dist = match dist {
+            Some(d) => d,
+            None => f32::INFINITY,
+        };
 
         // Insert into bests
         if bests.len() == 0 {
             bests.push(WordWithCost {
                 word_id: i,
-                cost: dist,
+                cost: float_dist,
             });
         }
         else {
             for j in (0..bests.len()).rev() {
-                if bests[j].cost >= dist {
+                if bests[j].cost >= float_dist {
                     if j < bests.len() - 1 {
                         bests[j + 1] = bests[j];
                     }
@@ -62,7 +83,7 @@ fn main() {
     
                     bests[j] = WordWithCost {
                         word_id: i,
-                        cost: dist,
+                        cost: float_dist,
                     };
                 }
                 else { break; }

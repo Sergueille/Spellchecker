@@ -5,6 +5,7 @@ pub struct Vec2D<T> {
     y_size: usize,
 }
 
+#[allow(dead_code)]
 impl<T> Vec2D<T> 
 where T: Clone {
     pub fn new(x_size: usize, y_size: usize, val: T) -> Vec2D<T> {
@@ -34,5 +35,15 @@ where T: Clone {
         }
 
         return self.data[x + y * self.x_size] = val;
+    }
+
+    pub fn print(&self, printfn: fn(T) -> String) {
+        for y in 0..self.y_size {
+            for x in  0..self.x_size {
+                print!("{} ", printfn(self.get(x, y)));
+            }
+
+            println!();
+        }
     }
 }
