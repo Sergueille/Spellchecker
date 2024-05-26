@@ -138,6 +138,7 @@ fn get_distance_aux(memo: &mut Vec2D<MemoisedValue>, a: &Vec<char>, b: &Vec<char
                 f32::min(del_total_cost, transp_total_cost),
             );
         }
+        
         if res >= max_cost {
             res = f32::INFINITY;
         }
