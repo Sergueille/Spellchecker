@@ -87,6 +87,26 @@ namespace Util {
             .len = strlen(resData),
         };
     }
+
+    bool IsURLInteresting(String current, String newURL) {
+        String currentCopy = MakeStringCopy(current.data);
+        String newUrlCopy = MakeStringCopy(newURL.data);
+
+        yuarel parsedCurrent;
+        yuarel parsedNew;
+        yuarel_parse(&parsedCurrent, currentCopy.data);
+        yuarel_parse(&parsedNew, newUrlCopy.data);
+
+        if (parsedNew.scheme != NULL
+         && strcmp(parsedNew.scheme, "https") 
+         && strcmp(parsedNew.scheme, "http")) return false; // Probably a link for mail or printing
+
+        if ((parsedNew.path == NULL || !strcmp(parsedCurrent.path, parsedNew.path))
+         && (parsedNew.host == NULL || !strcmp(parsedCurrent.host, parsedNew.host))) return false; // Probably a link to the same page
+
+        return true; // Otherwise, is seems okay!
+    }
 }
+
 
 #endif

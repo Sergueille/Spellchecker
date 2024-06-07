@@ -19,7 +19,7 @@ struct Status {
 };
 
 // Reads the page! Ignores some tags such as scripts, footers (to prevent the same text from being included multiple times)...
-PageResults ParseHTML(String text);
+PageResults ParseHTML(String text, String currentURL);
 
 // Returns true if s->position is on the end of the text
 bool IsEOF(Status* s);

@@ -25,5 +25,8 @@ namespace Util {
 
     // Used to navigate from "current" to "relative". 
     String GetRelativeURL(String current, String relative);
+
+    // Should navigate to URL?
+    bool IsURLInteresting(String current, String newURL);
 }
 

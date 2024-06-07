@@ -17,13 +17,13 @@ enum ParseMode {
     Normal, InTag, TagStart, InQuotes
 };
 
-PageResults ParseHTML(String text) {
+PageResults ParseHTML(String text, String currentURL) {
     ParseMode mode = Normal;
 
     std::vector<String> words = std::vector<String>();
     std::vector<String> urls = std::vector<String>();
 
-    // FIXME: fails to ignore all tag if multiple tags with same name are nested
+    // FIXME: fails to ignore all tag if multiple tags with same name are nested (not very likely, and not that bad)
     bool isInIgnoredTag = false; // If true, words are ignored
     char* ignoredTagName = NULL;
 
@@ -96,7 +96,10 @@ PageResults ParseHTML(String text) {
                     // Make sure there is a quote
                     if (TryRead(&s, (char*)"\"")) {
                         String url = ReadUntil(&s, '"', true);
-                        urls.push_back(url);
+
+                        if (IsURLInteresting(currentURL, url)) {
+                            urls.push_back(url);
+                        }
                     }
                 }
 

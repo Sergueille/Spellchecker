@@ -31,7 +31,7 @@ int main() {
         fflush(stdout);
 
         String s = Util::MakeString(txt);
-        HTMLParse::PageResults res = HTMLParse::ParseHTML(s);
+        HTMLParse::PageResults res = HTMLParse::ParseHTML(s, currentURL);
 
         printf("\r                                                                   "); // Make sure the line is cleaned properly
         printf("\r%d,\t%d,\t%.100s\n", res.wordCount, res.urlCount, currentURL.data);
