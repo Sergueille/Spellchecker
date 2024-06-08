@@ -101,8 +101,9 @@ namespace Util {
          && strcmp(parsedNew.scheme, "https") 
          && strcmp(parsedNew.scheme, "http")) return false; // Probably a link for mail or printing
 
-        if ((parsedNew.path == NULL || !strcmp(parsedCurrent.path, parsedNew.path))
-         && (parsedNew.host == NULL || !strcmp(parsedCurrent.host, parsedNew.host))) return false; // Probably a link to the same page
+        // Probably a link to the same page
+        if ((parsedCurrent.path != NULL && (parsedNew.path == NULL || !strcmp(parsedCurrent.path, parsedNew.path)))
+         && (parsedCurrent.host != NULL && (parsedNew.host == NULL || !strcmp(parsedCurrent.host, parsedNew.host)))) return false; 
 
         return true; // Otherwise, is seems okay!
     }

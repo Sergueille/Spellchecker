@@ -3,3 +3,5 @@
 .clangd
 **/.cache
 **/compile_commands.json
+**/*.dat
+**/a.out

@@ -17,23 +17,28 @@ constexpr int MAX_DATA = 1000 * 1000;
 constexpr int MAX_WORD_COUNT = 50 * 1000;
 
 int main(int argc, const char** argv) {
-    // Seeded for tests
+    printf("\nCrawler is ready, make sure you have internet access!\n");
+    printf("Press ENTER to stop and write file.\n");
+    printf("See README.txt for usage.\n");
+
+    char* outputFileName = (char*)"out.dat";
     char* entryPoint = (char*)"https://en.wikipedia.org/wiki/French_fries";
     int seed = time(NULL);
 
-    printf("\nCrawler is ready, make sure you have internet access!\n");
-    printf("Press ENTER to stop and write file.\n");
+    if (argc > 5) {
+        printf("\nToo many arguments! Expected at most 2.\n");
+    }
 
-    char* outputFileName = (char*)"out.dat";
-    if (argc > 2) {
-        printf("\nToo many arguments! Expected just the name of the output file!\n");
-        outputFileName = (char*)argv[1];
+    if (argc >= 2) {
+        entryPoint = (char*)argv[1];
     }
-    else if (argc == 2) {
-        outputFileName = (char*)argv[1];
+
+    if (argc >= 3) {
+        outputFileName = (char*)argv[2];
     }
-    else {
-        printf("\nNo output file name specified, defaults to %s. Set it with `%s <FILE NAME>`\n", outputFileName, argv[0]);
+
+    if (argc >= 4) {
+        seed = atoi(argv[3]);
     }
 
     printf("\nWords,\tLinks,\tURL\n");
