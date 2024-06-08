@@ -150,13 +150,15 @@ String ReadWord(Status* s) {
     if (std::isalnum(s->text.data[s->position])) {
         while (wordLen < MAX_WORD_LEN && !IsEOF(s)) {
             if (std::isalnum(s->text.data[s->position])) {
-                wordData[wordLen] = s->text.data[s->position];
+                char ch = s->text.data[s->position];
+                char lower = std::tolower(ch);
+
+                wordData[wordLen] = lower;
                 wordLen++;
                 s->position++;
             }
             else if (IsHalfChar(s->text.data[s->position])) {
                 // Get two (half) chars!
-                // printf("? %c\n", s->text.data[s->position]);
                 wordData[wordLen] = s->text.data[s->position];
                 wordLen++;
                 s->position++;
