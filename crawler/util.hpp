@@ -2,31 +2,21 @@
 #include <cstdlib>
 #include <cstring>
 #include <vector>
+#include <string>
 
 // Utility things
 namespace Util {
-    struct String {
-        char* data;
-        size_t len;
-    };
+    char* CopyStringBuffer(std::string source);
 
-    // Makes a string, calls strlen, uses the raw data
-    String MakeString(char* data);
-    // Makes a string, calls strlen, copies the raw data
-    String MakeStringCopy(char* data);
-    
-    void FreeString(String s);
-    String GetEmptyString();
-    
     template<typename T>
-    T* VectorToPtr(std::vector<T>* vect);
+    T* VectorToBuffer(std::vector<T>* vect);
 
     bool StringIsNullOrEmpty(char* s);
 
     // Used to navigate from "current" to "relative". 
-    String GetRelativeURL(String current, String relative);
+    std::string GetRelativeURL(std::string current, std::string relative);
 
     // Should navigate to URL?
-    bool IsURLInteresting(String current, String newURL);
+    bool IsURLInteresting(std::string current, std::string newURL);
 }
 

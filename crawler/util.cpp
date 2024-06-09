@@ -8,38 +8,22 @@
 
 constexpr int MAX_URL_SIZE = 500;
 
-namespace Util {
-    String MakeString(char* data) {
-        return (String) {
-            .data = data,
-            .len = strlen(data)
-        };
-    }
+namespace Util {    
 
-    String MakeStringCopy(char* data) {
-        size_t len = strlen(data);
-        char* copy = (char*)malloc((len + 1) * sizeof(char));
-        strcpy(copy, data);
+    char* CopyStringBuffer(std::string source) {
+        char* res = (char*)malloc((source.size() + 1) * sizeof(char));
 
-        return (String) {
-            .data = copy,
-            .len = len
-        };
-    }
+        for (int i = 0; i < source.size(); i++) {
+            res[i] = source[i];
+        }
 
-    void FreeString(String s) {
-        free(s.data);
-    }
+        res[source.size()] =  '\0';
 
-    String GetEmptyString() {
-        return (String) {
-            .data = NULL,
-            .len = 0,
-        };
+        return res;
     }
 
     template<typename T>
-    T* VectorToPtr(std::vector<T>* vect) {
+    T* VectorToBuffer(std::vector<T>* vect) {
         T* res = (T*)malloc(vect->size() * sizeof(T));
 
         for (int i = 0; i < vect->size(); i++) {
@@ -54,11 +38,11 @@ namespace Util {
     }
 
     // OPTI: may be better to store the struct directly
-    String GetRelativeURL(String current, String relative) {
+    std::string GetRelativeURL(std::string current, std::string relative) {
         yuarel parsedCurrent;
         yuarel parsedRelative;
-        yuarel_parse(&parsedCurrent, current.data);
-        yuarel_parse(&parsedRelative, relative.data);
+        yuarel_parse(&parsedCurrent, (char*)current.c_str());
+        yuarel_parse(&parsedRelative, (char*)relative.c_str());
 
         // Replace current values by relative ones if they exist
 
@@ -82,30 +66,34 @@ namespace Util {
             pos += snprintf(&resData[pos], MAX_URL_SIZE - pos, "#%s", parsedCurrent.fragment);
         }
 
-        return (String) {
-            .data = resData,
-            .len = strlen(resData),
-        };
+        std::string res = std::string(resData);
+        free(resData);
+        return res;
     }
 
-    bool IsURLInteresting(String current, String newURL) {
-        String currentCopy = MakeStringCopy(current.data);
-        String newUrlCopy = MakeStringCopy(newURL.data);
+    bool IsURLInteresting(std::string current, std::string newURL) {
+        char* currentCopy = CopyStringBuffer(current);
+        char* newUrlCopy = CopyStringBuffer(newURL);
 
         yuarel parsedCurrent;
         yuarel parsedNew;
-        yuarel_parse(&parsedCurrent, currentCopy.data);
-        yuarel_parse(&parsedNew, newUrlCopy.data);
+        yuarel_parse(&parsedCurrent, currentCopy);
+        yuarel_parse(&parsedNew, newUrlCopy);
+
+        bool res = true;
 
         if (parsedNew.scheme != NULL
          && strcmp(parsedNew.scheme, "https") 
-         && strcmp(parsedNew.scheme, "http")) return false; // Probably a link for mail or printing
+         && strcmp(parsedNew.scheme, "http")) res = false; // Probably a link for mail or printing
 
         // Probably a link to the same page
-        if ((parsedCurrent.path != NULL && (parsedNew.path == NULL || !strcmp(parsedCurrent.path, parsedNew.path)))
-         && (parsedCurrent.host != NULL && (parsedNew.host == NULL || !strcmp(parsedCurrent.host, parsedNew.host)))) return false; 
+        if ((parsedNew.path == NULL || !strcmp(parsedCurrent.path, parsedNew.path))
+         && (parsedNew.host == NULL || !strcmp(parsedCurrent.host, parsedNew.host))) res = false; 
 
-        return true; // Otherwise, is seems okay!
+        free(currentCopy);
+        free(newUrlCopy);
+
+        return res; // Otherwise, is seems okay!
     }
 }
 

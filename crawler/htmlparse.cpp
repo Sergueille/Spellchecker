@@ -3,6 +3,7 @@
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
+#include <string>
 #include <vector>
 
 #include "htmlparse.hpp"
@@ -17,11 +18,11 @@ enum ParseMode {
     Normal, InTag, TagStart, InQuotes
 };
 
-PageResults ParseHTML(String text, String currentURL) {
+PageResults ParseHTML(std::string text, std::string currentURL) {
     ParseMode mode = Normal;
 
-    std::vector<String> words = std::vector<String>();
-    std::vector<String> urls = std::vector<String>();
+    std::vector<std::string> words = std::vector<std::string>();
+    std::vector<std::string> urls = std::vector<std::string>();
 
     // FIXME: fails to ignore all tag if multiple tags with same name are nested (not very likely, and not that bad)
     bool isInIgnoredTag = false; // If true, words are ignored
@@ -34,7 +35,7 @@ PageResults ParseHTML(String text, String currentURL) {
         .position = 0,
     };
     while (!IsEOF(&s)) {
-        char current = s.text.data[s.position];
+        char current = s.text[s.position];
 
         if (mode == Normal) {
             if (TryRead(&s, (char*)"<")) { // Check for tag opening
@@ -47,18 +48,15 @@ PageResults ParseHTML(String text, String currentURL) {
                 char ent = LookForHTMLEntity(&s);
                 if (ent != '\0') { // Handle HTML entities such as '&lt;' for '<'
                     if (ent != ' ') {
-                        char* res = (char*)malloc(2 * sizeof(char));
+                        char res[2];
                         res[0] = ent;
                         res[1] = '\0';
 
-                        words.push_back((String) {
-                            .data = res,
-                            .len = 1,
-                        });
+                        words.push_back(std::string(res));
                     }
                 }
                 else {
-                    String w = ReadWord(&s);
+                    std::string w = ReadWord(&s);
                     words.push_back(w);
                     //printf("> %s\n", w.data);
                 }
@@ -79,7 +77,7 @@ PageResults ParseHTML(String text, String currentURL) {
             }
 
             while (!IsEOF(&s)) {
-                current = s.text.data[s.position];
+                current = s.text[s.position];
                 if (current == '>') {
                     mode = Normal;
                     s.position++;
@@ -95,10 +93,10 @@ PageResults ParseHTML(String text, String currentURL) {
 
                     // Make sure there is a quote
                     if (TryRead(&s, (char*)"\"")) {
-                        String url = ReadUntil(&s, '"', true);
+                        std::string url = ReadUntil(&s, '"', true);
 
                         if (IsURLInteresting(currentURL, url)) {
-                            urls.push_back(url);
+                            urls.push_back(GetRelativeURL(currentURL, url));
                         }
                     }
                 }
@@ -113,32 +111,24 @@ PageResults ParseHTML(String text, String currentURL) {
         }
     }
 
-    String* wordsArr = Util::VectorToPtr(&words);
-    String* urlsArr = Util::VectorToPtr(&urls);
-
     return (PageResults) {
-        .words = wordsArr,
-        .wordCount = (int)words.size(),
-        .urls = urlsArr,
-        .urlCount = (int)urls.size(),
+        .words = words,
+        .urls = urls
     };
 }
 
 bool IsEOF(Status* s) {
-    return (size_t)s->position >= s->text.len;
+    return (size_t)s->position >= s->text.size();
 }
 
-String ReadWord(Status* s) {
+std::string ReadWord(Status* s) {
     // Skip spaces
-    while (!IsEOF(s) && std::isspace(s->text.data[s->position])) {
+    while (!IsEOF(s) && std::isspace(s->text[s->position])) {
         s->position++;
     }
     
     if (IsEOF(s)) {
-        return (String) {
-            .data = NULL,
-            .len = 0,
-        };
+        return std::string();
     }
 
     char* wordData = (char*)malloc((MAX_WORD_LEN + 2) * sizeof(char));
@@ -147,25 +137,25 @@ String ReadWord(Status* s) {
     size_t wordLen = 0;
 
     // Letters
-    if (std::isalnum(s->text.data[s->position])) {
+    if (std::isalnum(s->text[s->position])) {
         while (wordLen < MAX_WORD_LEN && !IsEOF(s)) {
-            if (std::isalnum(s->text.data[s->position])) {
-                char ch = s->text.data[s->position];
+            if (std::isalnum(s->text[s->position])) {
+                char ch = s->text[s->position];
                 char lower = std::tolower(ch);
 
                 wordData[wordLen] = lower;
                 wordLen++;
                 s->position++;
             }
-            else if (IsHalfChar(s->text.data[s->position])) {
+            else if (IsHalfChar(s->text[s->position])) {
                 // Get two (half) chars!
-                wordData[wordLen] = s->text.data[s->position];
+                wordData[wordLen] = s->text[s->position];
                 wordLen++;
                 s->position++;
 
                 if (IsEOF(s)) break; // Shouldn't happen, except if invalid character at very end of file
 
-                wordData[wordLen] = s->text.data[s->position];
+                wordData[wordLen] = s->text[s->position];
                 wordLen++;
                 s->position++;
             }
@@ -173,27 +163,28 @@ String ReadWord(Status* s) {
         }
     }
     else { // Other symbol: just read one
-        wordData[0] = s->text.data[s->position];
+        wordData[0] = s->text[s->position];
         wordLen = 1;
         s->position++;
     }
 
     wordData[wordLen] = '\0';
 
-    return (String) {
-        .data = wordData,
-        .len = wordLen
-    };
+    std::string res = std::string(wordData);
+
+    free(wordData);
+
+    return res;
 }
 
-String ReadUntil(Status* s, char stopChar, bool storeResult) {
+std::string ReadUntil(Status* s, char stopChar, bool storeResult) {
     char* data;
     if (storeResult) {
         data = (char*)malloc((MAX_READ_LEN + 1) * sizeof(char));
     }
 
     size_t i = 0;
-    while (i < MAX_READ_LEN && !IsEOF(s) && s->text.data[s->position] != stopChar) {
+    while (i < MAX_READ_LEN && !IsEOF(s) && s->text[s->position] != stopChar) {
         if (storeResult) {
             char entity = LookForHTMLEntity(s);
             if (entity) {
@@ -201,7 +192,7 @@ String ReadUntil(Status* s, char stopChar, bool storeResult) {
                 s->position--;
             }
             else {
-                data[i] = s->text.data[s->position];
+                data[i] = s->text[s->position];
             }
 
             i++;
@@ -212,13 +203,12 @@ String ReadUntil(Status* s, char stopChar, bool storeResult) {
     if (storeResult) data[i] = '\0';
 
     if (storeResult) {
-        return (String) {
-            .data = data,
-            .len = i,
-        };
+        std::string res = std::string(data);
+        free(data);
+        return res;
     }
     else {
-        return GetEmptyString();
+        return std::string();
     }
 }
 
@@ -230,10 +220,10 @@ bool TryRead(Status* s, char* compare) {
 
         if (IsEOF(s)) return false;
 
-        if (std::isspace(s->text.data[s->position])) {
+        if (std::isspace(s->text[s->position])) {
             s->position++;
         }
-        else if (s->text.data[s->position] != compare[i]) {
+        else if (s->text[s->position] != compare[i]) {
             return false;
         }
         else {
@@ -246,7 +236,7 @@ bool TryRead(Status* s, char* compare) {
 char LookForHTMLEntity(Status* s) {
     int initialPosition = s->position;
 
-    if (s->text.data[s->position] == '&') {
+    if (s->text[s->position] == '&') {
         s->position++;
 
         int wordPos = s->position;
@@ -331,13 +321,7 @@ bool IsHalfChar(char c) {
 }
 
 void FreePageResults(PageResults r) {
-    for (int i = 0; i < r.wordCount; i++) {
-        Util::FreeString(r.words[i]);
-    }
-
-    for (int i = 0; i < r.urlCount; i++) {
-        Util::FreeString(r.urls[i]);
-    }
+    // TEST!
 }
 
 }

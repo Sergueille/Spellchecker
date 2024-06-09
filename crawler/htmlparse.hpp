@@ -7,28 +7,26 @@ using namespace Util;
 namespace HTMLParse {
 
 struct PageResults {
-    String* words;
-    int wordCount;
-    String* urls;
-    int urlCount;
+    std::vector<std::string> words;
+    std::vector<std::string> urls;
 };
 
 struct Status {
-    String text;
+    std::string text;
     int position;
 };
 
 // Reads the page! Ignores some tags such as scripts, footers (to prevent the same text from being included multiple times)...
-PageResults ParseHTML(String text, String currentURL);
+PageResults ParseHTML(std::string text, std::string currentURL);
 
 // Returns true if s->position is on the end of the text
 bool IsEOF(Status* s);
 
 // Reads a word: skip spaces returns the first char, then all alphanumerical chars after, then stops. 
-String ReadWord(Status* s);
+std::string ReadWord(Status* s);
 
 // Reads until stopChar (or EOF) is found. Places the position on stopChar. If storeResult is true, return a string with the content
-String ReadUntil(Status* s, char stopChar, bool storeResult);
+std::string ReadUntil(Status* s, char stopChar, bool storeResult);
 
 // Try to find compare, but ignores whitespace from source text. Places the position after the last char of compare or on the first different char.
 bool TryRead(Status* s, char* compare);

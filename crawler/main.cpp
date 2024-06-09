@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include <string>
 #include <map>
+#include <set>
+#include <queue>
 #include <cstddef>
 #include <curses.h>
 
@@ -14,7 +16,7 @@
 #include "htmlparse.cpp"
 
 constexpr int MAX_DATA = 1000 * 1000;
-constexpr int MAX_WORD_COUNT = 50 * 1000;
+constexpr int MAX_WORD_COUNT = 500 * 1000;
 
 int main(int argc, const char** argv) {
     printf("\nCrawler is ready, make sure you have internet access!\n");
@@ -23,9 +25,8 @@ int main(int argc, const char** argv) {
 
     char* outputFileName = (char*)"out.dat";
     char* entryPoint = (char*)"https://en.wikipedia.org/wiki/French_fries";
-    int seed = time(NULL);
 
-    if (argc > 5) {
+    if (argc > 4) {
         printf("\nToo many arguments! Expected at most 2.\n");
     }
 
@@ -37,46 +38,48 @@ int main(int argc, const char** argv) {
         outputFileName = (char*)argv[2];
     }
 
-    if (argc >= 4) {
-        seed = atoi(argv[3]);
-    }
-
     printf("\nWords,\tLinks,\tURL\n");
 
-    srand(seed);
-
-    std::map<std::string, uint32_t> map; // Map of (word, wordID)
-    std::string* wordTable = (std::string*)malloc(MAX_WORD_COUNT * sizeof(std::string)); // Table of words
+    std::map<std::string, uint32_t> map{}; // Map of (word, wordID)
+    char** wordTable = (char**)malloc(MAX_WORD_COUNT * sizeof(char*)); // Table of words
     uint32_t nextID = 1; // The next id that will be given to a new word
     uint32_t* data = (uint32_t*)malloc(MAX_DATA * sizeof(uint32_t)); // Lists of words id
     int dataPos = 0;
 
-    String currentURL = Util::MakeStringCopy(entryPoint);
-    String previousURL = Util::MakeStringCopy((char*)"");
+    std::set<std::string> visitedURLs{}; // URS that are visited OR pushed in URLsToVisit
+    std::queue<std::string> URLsToVisit{};
+    URLsToVisit.push(std::string(entryPoint));
+    visitedURLs.insert(std::string(entryPoint));
+
     while (true) {
-        printf("FETCHING %.100s", currentURL.data);
+        std::string current = URLsToVisit.front();
+        URLsToVisit.pop();
+
+        printf("FETCHING %.100s", current.c_str());
         fflush(stdout);
 
-        char* txt = CallCurl(currentURL.data);
+        char* txt = CallCurl((char*)current.c_str());
 
-        printf("\rPARSING %.100s", currentURL.data);
+        printf("\rPARSING %.100s", current.c_str());
         fflush(stdout);
 
-        String s = Util::MakeString(txt);
-        HTMLParse::PageResults res = HTMLParse::ParseHTML(s, currentURL);
+        std::string s = std::string(txt);
+        free(txt);
+        HTMLParse::PageResults res = HTMLParse::ParseHTML(s, current);
 
         printf("\r                                                                   "); // Make sure the line is cleaned properly
-        printf("\r%d,\t%d,\t%.100s\n", res.wordCount, res.urlCount, currentURL.data);
+        printf("\r%d,\t%d,\t%.100s\n", (int)res.words.size(), (int)res.urls.size(), current.c_str());
         fflush(stdout);
 
         // Insert in database
-        for (int i = 0; i < res.wordCount; i++) {
-            std::string word = std::string(res.words[i].data);
+        for (int i = 0; i < res.words.size(); i++) {
+            std::string word = res.words[i];
 
             if (map.count(word) == 0) {
-                map.insert({word, nextID});
-                wordTable[nextID] = word;
+                wordTable[nextID] = CopyStringBuffer(word);
                 nextID++;
+
+                map.insert({word, nextID});
             }
 
             uint32_t ID = map.at(word);
@@ -85,26 +88,19 @@ int main(int argc, const char** argv) {
             dataPos++;
         }
 
-        if (res.urlCount > 0) {
-            // Get a random URL
-            int randomId = rand() % res.urlCount;
+        // Collect urls
+        for (int i = 0; i < res.urls.size(); i++) {
+            if (visitedURLs.count(res.urls[i]) > 0) continue; // Ignore if already visited
 
-            String newURL = Util::GetRelativeURL(Util::MakeStringCopy(currentURL.data), res.urls[randomId]);
-            Util::FreeString(previousURL);
-            previousURL = currentURL;
-            currentURL = newURL;
-        }
-        else {
-            Util::FreeString(currentURL);
-            currentURL = Util::MakeStringCopy(previousURL.data);
+            URLsToVisit.push(res.urls[i]);
+            visitedURLs.insert(res.urls[i]);
         }
 
         HTMLParse::FreePageResults(res);
-        Util::FreeString(s);
 
         usleep(10000);
 
-        // Check if ca character is typed
+        // Check if a character is typed
 
         initscr();
         timeout(0);
@@ -135,8 +131,8 @@ int main(int argc, const char** argv) {
         fwrite(&dataCount, 1, sizeof(uint32_t), outFile);
 
         // wordCount times: a word string then \0
-        for (int i = 1; i < wordCount; i++) {
-            fprintf(outFile, "%s", wordTable[i].c_str());
+        for (int i = 0; i < wordCount; i++) {
+            fprintf(outFile, "%s", wordTable[i + 1]);
 
             uint8_t zero = 0;
             fwrite(&zero, 1, sizeof(uint8_t), outFile);
@@ -156,6 +152,10 @@ int main(int argc, const char** argv) {
 
         fclose(outFile);
     }
+
+    for (int i = 1; i < nextID; i++) {
+        free(wordTable[i]);
+    }   
 
     free(data);
     free(wordTable);
