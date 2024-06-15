@@ -15,7 +15,7 @@
 #include "getfile.cpp"
 #include "htmlparse.cpp"
 
-constexpr int MAX_DATA = 1000 * 1000;
+constexpr int MAX_DATA = 100 * 1000  * 1000;
 constexpr int MAX_WORD_COUNT = 500 * 1000;
 
 int main(int argc, const char** argv) {
@@ -59,6 +59,10 @@ int main(int argc, const char** argv) {
         fflush(stdout);
 
         char* txt = CallCurl((char*)current.c_str());
+        if (txt == NULL) {
+            printf("\n");
+            continue;
+        }
 
         printf("\rPARSING %.100s", current.c_str());
         fflush(stdout);

@@ -321,7 +321,7 @@ bool IsHalfChar(char c) {
 }
 
 void FreePageResults(PageResults r) {
-    // TEST!
+    // Nothing to do with the current types!
 }
 
 }

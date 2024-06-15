@@ -14,8 +14,8 @@ char* CallCurl(char* url) {
     // Read file located in "tmp"
     FILE* resFile = fopen("tmp", "r");
     if (resFile == NULL) {
-        printf("\nFailed to get file!" );
-        exit(1);
+        printf("\nFailed to get file!\n");
+        return NULL;
     }
     // Get the length of the file
     fseek(resFile, 0, SEEK_END); 
