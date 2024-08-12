@@ -1,0 +1,57 @@
+
+
+
+WORD CONTEXT:
+
+- tried distance algorithm
+    -> works well, quite fast ~1ms/word (in debug not tested in release), but not fast enough for 300k words...
+        -> up to 30s for long words
+    -> tried filtering words by computing minimum distance quickly, and if it's higher than previous words, drop the word 
+        -> based on length difference
+        -> based on quantity of letters 
+        -> nice time improvement but not enough
+            -> better for small words, seconds or less
+            -> still around 20s for long words
+    -> tried dropping computations is cost is higher that previous words, but breaks memoisation and no significant speed increase
+    -> tried selecting the ~1000 best words with a coarse distance, then calculating exact distance
+        -> not "correct" anymore, but if necessary can run on more than 1000 words
+        -> seems correct with 2k
+        -> time (release build):
+            -> fast distances: 0.1s 
+            -> 2k precise distances: 0.1s 
+
+
+Fast distance algorithms:
+- len: compare lengths (almost free)
+- count: count occurrences of letters (100ms)
+- pres: check presence of letters (50ms)
+- comp: compare each character (??)
+- pairs-count: check occurrences of pairs of letters (1.1s)
+- pairs-pres: check presence of pairs of letters (??)
+
++:      many
+x-:     usually x, but can be less
+x*:     same, but almost never happens
+x/y:    or y
+
+        len             count           pres            comp            pairs-count     pairs-pres  
+ins:    1               1               0/1             +               3/2*            3-
+del:    1               1               0/1             +               3/2*            3-
+sub:    0               2               0/2             1               4               4-
+tra:    0               0               0               2               6-              6-
+
+weights for Len, Count, depending of Insertion cost, Substitution cost, Transposition cost
+
+l = 6i - 3s - t
+c = 3s - 2t
+p = t
+
+-> fast count: correct up to 4 times the same letters
+    -> different bit count for letters (3 for most common, 2 for others)
+
+
+
+-> now implemented combined fast distance
+    -> works mush better (could almost replace original algorithm!), 500 words in buffer does the job, but it can be increased
+    -> the bottleneck is now the pairs algorithm (200ms on 300k words), already tried some improvements, see code comments
+        -> no recursive calls, can be ported on graphic cards (probably)

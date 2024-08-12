@@ -42,7 +42,7 @@ int main(int argc, const char** argv) {
 
     std::map<std::string, uint32_t> map{}; // Map of (word, wordID)
     char** wordTable = (char**)malloc(MAX_WORD_COUNT * sizeof(char*)); // Table of words
-    uint32_t nextID = 1; // The next id that will be given to a new word
+    uint32_t nextID = 0; // The next id that will be given to a new word
     uint32_t* data = (uint32_t*)malloc(MAX_DATA * sizeof(uint32_t)); // Lists of words id
     int dataPos = 0;
 
@@ -81,9 +81,8 @@ int main(int argc, const char** argv) {
 
             if (map.count(word) == 0) {
                 wordTable[nextID] = CopyStringBuffer(word);
-                nextID++;
-
                 map.insert({word, nextID});
+                nextID++;
             }
 
             uint32_t ID = map.at(word);
@@ -136,7 +135,7 @@ int main(int argc, const char** argv) {
 
         // wordCount times: a word string then \0
         for (int i = 0; i < wordCount; i++) {
-            fprintf(outFile, "%s", wordTable[i + 1]);
+            fprintf(outFile, "%s", wordTable[i]);
 
             uint8_t zero = 0;
             fwrite(&zero, 1, sizeof(uint8_t), outFile);
@@ -157,7 +156,7 @@ int main(int argc, const char** argv) {
         fclose(outFile);
     }
 
-    for (int i = 1; i < nextID; i++) {
+    for (int i = 0; i < nextID; i++) {
         free(wordTable[i]);
     }   
 

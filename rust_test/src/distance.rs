@@ -3,11 +3,6 @@ use crate::vec2d::Vec2D;
 
 // TODO: better support for strange characters such as œ, for instance oe and œ should have a distance that is < 1, but the distance is currently 2
 
-/// Minimal value taken by insertion cost
-pub const MIN_INSERTION_COST: f32 = 1.0;
-/// Minimal value taken by deletion cost
-pub const MIN_DELETION_COST: f32 = 1.0;
-
 /// Cost of a substitution where a diacritic is ommited (e/é or c/ç)
 /// Low value because generally the user forget it, and it doesn't change completely the meaning of the word
 pub const DIACRITIC_SUBTITUTION_COST: f32 = 0.1;
@@ -29,18 +24,17 @@ pub const DIACRITICS_PAIRS: [[char; 2]; 15] = [
     ['ç', 'c'],
 ];
 
-/// Cost of a substitution where letters are adjacent ok keyboard
-pub const ADJACENT_SUBTITUTION_COST: f32 = 0.7;
+/// Cost of a substitution where letters are adjacent on keyboard
+pub const ADJACENT_SUBSTITUTION_COST: f32 = 0.7;
 
 /// Cost of a transposition
 pub const BASE_TRANSPOSITION_COST: f32 = 1.1;
-/// Cost of a transposition where letters are adjacent ok keyboard
+/// Cost of a transposition where letters are adjacent on keyboard
 pub const ADJACENT_TRANSPOSITION_COST: f32 = 1.0;
 
 #[derive(Clone, Copy)]
 struct MemoisedValue {
     pub val: Option<f32>,
-    pub max_cost: f32,
 }
 
 /// Gets the edition distance between two strings
@@ -50,15 +44,15 @@ struct MemoisedValue {
 /// * if the cost exceeds this, just return None
 /// 
 /// Uses https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-019-2819-0, with basic recursive dynamic programming and variable costs
-pub fn get_distance(a: &str, b: &str, max_cost: f32) -> Option<f32> {
+pub fn get_distance(a: &str, b: &str) -> Option<f32> {
     // Get characters
     let a_chars: Vec<char> = a.chars().collect();
     let b_chars: Vec<char> = b.chars().collect();
 
     // Create memoisation table
-    let mut memo = Vec2D::new(a_chars.len() + 1, b_chars.len() + 1, MemoisedValue { val: None, max_cost: f32::INFINITY });
+    let mut memo = Vec2D::new(a_chars.len() + 1, b_chars.len() + 1, MemoisedValue { val: None });
 
-    let res = get_distance_aux(&mut memo, &a_chars, &b_chars, a_chars.len(), b_chars.len(), max_cost);
+    let res = get_distance_aux(&mut memo, &a_chars, &b_chars, a_chars.len(), b_chars.len());
 
     // memo.print(|val| if val.val.is_some() { String::from("#") } else { String::from(".") });
 
@@ -66,49 +60,36 @@ pub fn get_distance(a: &str, b: &str, max_cost: f32) -> Option<f32> {
 }
 
 /// Returns f32::INFINITY if greater than max_cost
-fn get_distance_aux(memo: &mut Vec2D<MemoisedValue>, a: &Vec<char>, b: &Vec<char>, i: usize, j: usize, max_cost: f32) -> f32 {
+fn get_distance_aux(memo: &mut Vec2D<MemoisedValue>, a: &Vec<char>, b: &Vec<char>, i: usize, j: usize) -> f32 {
     let memoized = memo.get(i, j);
 
-    if memoized.val.is_some() && memoized.max_cost >= max_cost {
+    if memoized.val.is_some() {
         return memoized.val.unwrap(); // Value already computed
     }
     else { // Compute value
         let mut res: f32;
 
-        if max_cost <= 0.0 {
-            res = f32::INFINITY;
-        }
-        else if i == 0 { // Only additions
+        if i == 0 { // Only additions
             res = 0.0;
             for k in 0..j {
                 res += get_insertion_cost(b[k]);
-
-                if res > max_cost { 
-                    res = f32::INFINITY; 
-                    break; 
-                }
             }
         }
         else if j == 0 { // Only deletions
             res = 0.0;
             for k in 0..i {
                 res += get_deletion_cost(a[k]);
-
-                if res > max_cost { 
-                    res = f32::INFINITY; 
-                    break; 
-                }
             }
         }
         else {
             let sub_cost = get_substitution_cost(a[i - 1], b[j - 1]);
-            let sub_total_cost = sub_cost + get_distance_aux(memo, a, b, i - 1, j - 1, max_cost - sub_cost);
+            let sub_total_cost = sub_cost + get_distance_aux(memo, a, b, i - 1, j - 1);
             
             let ins_cost = get_insertion_cost(b[j - 1]);
-            let ins_total_cost = ins_cost + get_distance_aux(memo, a, b, i - 1, j, max_cost - ins_cost);
+            let ins_total_cost = ins_cost + get_distance_aux(memo, a, b, i - 1, j);
 
             let del_cost = get_deletion_cost(b[j - 1]);
-            let del_total_cost = del_cost + get_distance_aux(memo, a, b, i, j - 1, max_cost - del_cost);
+            let del_total_cost = del_cost + get_distance_aux(memo, a, b, i, j - 1);
 
             let last_a = last_letter_id(a, b[j - 1], i - 1);
             let last_b = last_letter_id(b, a[i - 1], j - 1);
@@ -127,7 +108,7 @@ fn get_distance_aux(memo: &mut Vec2D<MemoisedValue>, a: &Vec<char>, b: &Vec<char
                         rem_sum += get_deletion_cost(a[k]);
                     }
 
-                    let base_cost = get_distance_aux(memo, a, b, la, lb, max_cost - add_sum - rem_sum - transp_cost);
+                    let base_cost = get_distance_aux(memo, a, b, la, lb);
                     base_cost + add_sum + rem_sum + transp_cost
                 },
                 _ => f32::INFINITY
@@ -139,13 +120,8 @@ fn get_distance_aux(memo: &mut Vec2D<MemoisedValue>, a: &Vec<char>, b: &Vec<char
             );
         }
         
-        if res >= max_cost {
-            res = f32::INFINITY;
-        }
-
         memo.set(i, j, MemoisedValue {
             val: Some(res),
-            max_cost: max_cost,
         });
 
         return res;
@@ -170,7 +146,7 @@ pub fn get_substitution_cost(a: char, b: char) -> f32 {
         return DIACRITIC_SUBTITUTION_COST;
     }
     else if are_characters_adjacent_on_keyboard(a, b) {
-        return ADJACENT_SUBTITUTION_COST;
+        return ADJACENT_SUBSTITUTION_COST;
     }
     else {
         return 1.0;

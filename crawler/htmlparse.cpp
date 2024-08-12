@@ -137,9 +137,9 @@ std::string ReadWord(Status* s) {
     size_t wordLen = 0;
 
     // Letters
-    if (std::isalnum(s->text[s->position])) {
+    if (std::isalpha(s->text[s->position])) {
         while (wordLen < MAX_WORD_LEN && !IsEOF(s)) {
-            if (std::isalnum(s->text[s->position])) {
+            if (std::isalpha(s->text[s->position])) {
                 char ch = s->text[s->position];
                 char lower = std::tolower(ch);
 
@@ -239,52 +239,72 @@ char LookForHTMLEntity(Status* s) {
     if (s->text[s->position] == '&') {
         s->position++;
 
-        int wordPos = s->position;
+        if (s->text[s->position] == '#') {
+            s->position++;
+            
+            char value = 0;
+            while (s->text[s->position] != ';') {
+                char c = s->text[s->position];
 
-        const int ENTITY_COUNT = 12;
-        const char* words[ENTITY_COUNT] = {
-            "nbsp;",
-            "lt;",
-            "gt;",
-            "amp;",
-            "quot;",
-            "apos;",
-            "cent;",
-            "pound;",
-            "yen;",
-            "euro;",
-            "copy;",
-            "reg;",
-        };
+                if (c < '0' || c > '9') break;
 
-        char chars[ENTITY_COUNT] = {
-            ' ',
-            '<',
-            '>',
-            '&',
-            '"',
-            '\'',
-            '$',
-            '$',
-            '$',
-            '$',
-            '?',
-            '?',
-        };
+                value = 10 * value + (c - '0');
 
-        for (int i = 0; i < ENTITY_COUNT; i++) {
-            bool ok = TryRead(s, (char*)words[i]);
-
-            if (ok) {
-                return chars[i];
+                s->position++;
             }
-            else {
-                s->position = wordPos;
-            }
+            
+            s->position++;
+
+            return value;
         }
+        else {
+            int wordPos = s->position;
 
-        s->position = initialPosition;
-        return '\0';
+            const int ENTITY_COUNT = 12;
+            const char* words[ENTITY_COUNT] = {
+                "nbsp;",
+                "lt;",
+                "gt;",
+                "amp;",
+                "quot;",
+                "apos;",
+                "cent;",
+                "pound;",
+                "yen;",
+                "euro;",
+                "copy;",
+                "reg;",
+            };
+
+            char chars[ENTITY_COUNT] = {
+                ' ',
+                '<',
+                '>',
+                '&',
+                '"',
+                '\'',
+                '$',
+                '$',
+                '$',
+                '$',
+                '?',
+                '?',
+            };
+
+            for (int i = 0; i < ENTITY_COUNT; i++) {
+                bool ok = TryRead(s, (char*)words[i]);
+
+                if (ok) {
+                    return chars[i];
+                }
+                else {
+                    s->position = wordPos;
+                }
+            }
+
+            s->position = initialPosition;
+            return '\0';
+        }
     }
     else return '\0';
 }

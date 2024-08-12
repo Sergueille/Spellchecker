@@ -33,6 +33,14 @@ void FreeCategories(Categories c) {
     free(c.sizes);
 }
 
+void ChangeCategoryOfWord(uint32_t wordID, int newCat, Categories c) {
+    c.sizes[c.data[wordID]]--;
+
+    c.data[wordID] = newCat;
+
+    c.sizes[c.data[wordID]]++;
+}
+
 // Will calculate the proportion of the pair [word][word of category cat] among all appearances of word
 float CalculateWordCatCorrelation(uint32_t word, int cat, Categories c, Block b) {
     int wordCount = 0;
@@ -78,11 +86,11 @@ float* CalculateAllWordCatCorrelation(Categories c, Block b, Database db) {
 
     for (int i = 0; i < db.wordCount; i++) {
         for (int j = 0; j < c.count; j++) {
-            if (occurrences[j] == 0) {
+            if (occurrences[i] == 0) {
                 correlations[i * c.count + j] = NAN;
             }
             else {
-                correlations[i * c.count + j] /= (float)occurrences[j];
+                correlations[i * c.count + j] /= (float)occurrences[i];
             }
         }
     }
@@ -130,8 +138,9 @@ float* CalculateCategoryVariances(Categories c, Database db, Block b, uint32_t* 
                 float diff = fabs(correlation - correlationSums[wordCategory]);
 
                 if (diff > furtherWordDiff) { // TODO: check on all categories
-                    furtherWordDiff =diff;
+                    furtherWordDiff = diff;
                     *furtherWord = i;
+                    // printf("TEST: %s %f %f\n", db.words[*furtherWord], diff, correlationSums[wordCategory]);
                 }
 
                 res[wordCategory] += diff;
@@ -149,4 +158,12 @@ float* CalculateCategoryVariances(Categories c, Database db, Block b, uint32_t* 
     return res;
 }
 
+float Average(float* arr, int size) {
+    float res = 0;
 
+    for (int i = 0; i < size; i++) {
+        res += arr[i];
+    }
+
+    return res;
+}

@@ -13,6 +13,8 @@ Categories AssignRandomCategories(int wordCount, int categoryCount);
 
 void FreeCategories(Categories c);
 
+void ChangeCategoryOfWord(uint32_t wordID, int newCat, Categories c);
+
 // Will calculate the proportion of the pair [word], [word of category cat] among all appearances of word
 // Can return NaN if word not present in block
 float CalculateWordCatCorrelation(uint32_t word, int cat, Categories c, Block b);
@@ -29,3 +31,5 @@ float* CalculateAllWordCatCorrelation(Categories c, Block b, Database db);
 //
 float* CalculateCategoryVariances(Categories c, Database db, Block b, uint32_t* furtherWord);
 
+// Returns the average of the array
+float Average(float* arr, int size);

@@ -18,7 +18,17 @@ Block CreateBlock(Database db, int size, int shift) {
     return (Block) {
         .ids = &(db.ids[shift]),
         .size = size,
+        .shift = shift,
     };
 }
+
+bool IsInBlock(uint32_t w, Block b) {
+    for (int i = 0; i < b.size; i++) {
+        if (b.ids[i] == w) return true;
+    }
+
+    return false;
+}
+
 
 #endif

@@ -58,6 +58,7 @@ namespace Util {
         int pos = snprintf(resData, MAX_URL_SIZE, "%s://%s/%s", 
             parsedCurrent.scheme, parsedCurrent.host,parsedCurrent.path);
 
+        /*
         if (!StringIsNullOrEmpty(parsedCurrent.query)) {
             pos += snprintf(&resData[pos], MAX_URL_SIZE - pos, "?%s", parsedCurrent.query);
         }
@@ -65,6 +66,7 @@ namespace Util {
         if (!StringIsNullOrEmpty(parsedCurrent.fragment)) {
             pos += snprintf(&resData[pos], MAX_URL_SIZE - pos, "#%s", parsedCurrent.fragment);
         }
+        */
 
         std::string res = std::string(resData);
         free(resData);
