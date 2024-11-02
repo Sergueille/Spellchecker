@@ -3,11 +3,12 @@ Visite des sites web, analyse le HTML, et récupère du texte.
 Fait un parcours en largeur: à chaque page visitée, les liens sont ajoutés à une queue, puis tirés un pr un.
 
 Usage:
-    ./a.out <URL> <FICHIER>
+    ./a.out <URL> <FICHIER> <FILTRE>
 
     où
         <URL> est l'url de départ (par défaut https://en.wikipedia.org/wiki/French_fries)
         <FICHIER> est le nom du ficher a écrire en sortie (par défaut out.dat)
+        <FILTRE> est une chaîne de caractères, tous les liens qui la contiennent seront ignorés
 
 
 Format de fichier de sortie:
@@ -23,8 +24,7 @@ Format de fichier de sortie:
     (donc deux à la suite en tout, si on compte celui d'avant)
 
 - M fois:
-    - un uint32: l'identifiant du mot (en comptant a partir de 1) OU 0
-        (0 signifie ques les mots ne sont pas côte-à-côte, c'est un séparateur)
+    - un uint32: l'identifiant ID du mot (il apparaît donc en ID-ème dans la première parie du fichier)
 
 
 TODO: find a way to see when two texts are not next to each other

@@ -5,3 +5,6 @@
 **/compile_commands.json
 **/*.dat
 **/a.out
+**/.out
+
+test_words.txt

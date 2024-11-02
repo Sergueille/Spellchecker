@@ -2,29 +2,20 @@
 #include <cstddef>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 
 #include "filereader.cpp"
 #include "database.cpp"
 #include "categories.cpp"
 
-int main(int argc, const char** argv) {
-    if (argc <= 1) {
-        printf("Expected filename.\n");
-        return EXIT_FAILURE;
-    }
+#include "context.cpp"
 
+
+void categories(int argc, const char** argv, Database db) {
     printf("Reading file...");
     fflush(stdout);
 
-    Database db;
-    bool success = ReadFile((char*)argv[1], &db);
-
     Block testBlock = CreateBlock(db, 10000, 0);
-    
-    if (!success) {
-        printf("\rFailed to read/parse the file.\n");
-        return EXIT_FAILURE;
-    }
 
     printf("\rRunning...                  \n");
 
@@ -92,7 +83,38 @@ int main(int argc, const char** argv) {
     free(variances);
 
     FreeCategories(c);
+}
+
+int main(int argc, const char** argv) {
+    if (argc <= 2) {
+        printf("Usage: keyword(cat, ctx) database-path\n");
+        return EXIT_FAILURE;
+    }
+
+    Database db;
+    bool success = ReadFile((char*)argv[2], &db);
+    
+    if (!success) {
+        printf("\rFailed to read/parse the file.\n");
+        return EXIT_FAILURE;
+    }
+
+    if (strcmp(argv[1], "cat") == 0) {
+        categories(argc, argv, db);
+    }
+    else if (strcmp(argv[1], "ctx") == 0) {
+        context(argc, argv, db);
+    }
+    else if (strcmp(argv[1], "cxt") == 0) {
+        contextTest(argc, argv, db);
+    }
+    else {
+        printf("Invalid keyword. Possible ones are: cat, ctx.\n");
+        return EXIT_FAILURE;
+    }
+
     FreeDatabase(db);
 
     return EXIT_SUCCESS;
 }
+

@@ -1,3 +1,5 @@
+use crate::distance;
+
 
 pub const INSERTION_DELETION_COST: f32 = 1.0;
 pub const TRANSPOSITION_COST: f32 = 1.2;
@@ -135,13 +137,31 @@ fn get_presence_table(a: &str) -> u32 {
 }
 
 fn get_char_code(a: char) -> usize {
-    let c = a.to_ascii_lowercase();
-
-    if c.is_ascii() && c >= 'a' && c <= 'z' {
-        return c as usize - 'a' as usize;
+    if a.is_ascii() {
+        let c = a.to_ascii_lowercase();
+    
+        if c >= 'a' && c <= 'z' {
+            return c as usize - 'a' as usize;
+        }
+        else {
+            return 26;
+        }
     }
     else {
-        return 26;
+        let mut c = a.to_lowercase().next().unwrap();
+
+        for pair in distance::DIACRITICS_PAIRS {
+            if pair[0] == c {
+                c = pair[1]
+            }
+        }
+
+        if c.is_ascii() && c >= 'a' && c <= 'z' {
+            return c as usize - 'a' as usize;
+        }
+        else {
+            return 26;
+        }
     }
 }
 

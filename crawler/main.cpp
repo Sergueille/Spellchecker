@@ -26,8 +26,11 @@ int main(int argc, const char** argv) {
     char* outputFileName = (char*)"out.dat";
     char* entryPoint = (char*)"https://en.wikipedia.org/wiki/French_fries";
 
+    bool filterEnabled = false;
+    char* filter = (char*)"";
+
     if (argc > 4) {
-        printf("\nToo many arguments! Expected at most 2.\n");
+        printf("\nToo many arguments! Expected at most 3.\n");
     }
 
     if (argc >= 2) {
@@ -36,6 +39,11 @@ int main(int argc, const char** argv) {
 
     if (argc >= 3) {
         outputFileName = (char*)argv[2];
+    }
+
+    if (argc >= 4) {
+        filterEnabled = true;
+        filter = (char*)argv[3];
     }
 
     printf("\nWords,\tLinks,\tURL\n");
@@ -93,6 +101,7 @@ int main(int argc, const char** argv) {
 
         // Collect urls
         for (int i = 0; i < res.urls.size(); i++) {
+            if (filterEnabled && strstr(res.urls[i].c_str(), filter) != NULL) continue; // Blocked by filter
             if (visitedURLs.count(res.urls[i]) > 0) continue; // Ignore if already visited
 
             URLsToVisit.push(res.urls[i]);
