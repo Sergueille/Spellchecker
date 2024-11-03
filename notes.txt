@@ -52,14 +52,16 @@ p = t
 
 -> now implemented combined fast distance
     -> works mush better (could almost replace original algorithm!), 500 words in buffer does the job, but it can be increased
-    -> the bottleneck is now the pairs algorithm (200ms on 300k words), already tried some improvements, see code comments
-        -> no recursive calls, can be ported on graphic cards (probably)
+    -> // the bottleneck is now the pairs algorithm (200ms on 300k words), already tried some improvements, see code comments
+        -> not anymore!! now around 30ms thanks to obscure bit hacks
+        -> uses the fact that in french (and in english, with 9 exceptions), no word contains 4 times the same pair of letter, to 2 bits are enough to count occurrences of pairs of letters
+        -> potential optimisation: no recursive calls, can be ported on graphic cards (probably)
 
 
 
 -> output of fast distance test:
 For each proposition made by the slow algorithm (left to right), the position of it in the fast algorithm's rank (worse since beginning)     Worst of all since beginning
-<payeur               0 (0)       1 (1)       2 (2)       3 (3)       14 (14)     9 (9)       12 (12)     21 (21)     51 (51)     83 (83)     83
+payeur               0 (0)       1 (1)       2 (2)       3 (3)       14 (14)     9 (9)       12 (12)     21 (21)     51 (51)     83 (83)     83
 paypeur              0 (0)       2 (2)       20 (20)     66 (66)     1 (14)      3 (9)       13 (13)     19 (21)     21 (51)     22 (83)     83
 apyeui               27 (27)     1 (2)       51 (51)     181 (181)   19 (19)     20 (20)     23 (23)     25 (25)     28 (51)     32 (83)     181
 ptdyur               31 (31)     29 (29)     65 (65)     209 (209)   213 (213)   223 (223)   227 (227)   766 (766)   771 (771)   945 (945)   945
@@ -88,7 +90,7 @@ carrioreeeint        110 (7239)  179 (1225)  249 (11615) 119 (15402) 790 (3697) 
 /* many lines skipped */
 mgestros             0 (7239)    14 (4645)   182 (12307) 331 (15402) 18 (9385)   106 (11030) 329 (14582) 330 (14152) 26 (17146)  33 (10418)  17146
 kmasetzios           4837 (7239) 10582 (10582) 6392 (12307) 10404 (15402) 106 (9385)  125 (11030) 229 (14582) 635 (14152) 649 (17146) 2145 (10418) 17146
-	bastidon             0 (7239)    1 (10582)   4 (12307)   2 (15402)   3 (9385)    5 (11030)   8 (14582)   9 (14152)   147 (17146) 160 (10418) 17146
+bastidon             0 (7239)    1 (10582)   4 (12307)   2 (15402)   3 (9385)    5 (11030)   8 (14582)   9 (14152)   147 (17146) 160 (10418) 17146
 batstidon            1 (7239)    0 (10582)   37 (12307)  573 (15402) 22 (9385)   32 (11030)  36 (14582)  49 (14152)  315 (17146) 151 (10418) 17146
 bastidovy            0 (7239)    1 (10582)   2 (12307)   3 (15402)   10 (9385)   14 (11030)  203 (14582) 1821 (14152) 7 (17146)   8 (10418)   17146
 basutdiln            1236 (7239) 296 (10582) 422 (12307) 1385 (15402) 2267 (9385) 11306 (11306) 14634 (14634) 16976 (16976) 58 (17146)  69 (10418)  17146

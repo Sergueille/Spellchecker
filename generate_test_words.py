@@ -1,8 +1,9 @@
-# Generate words with errors (0 to 4 errors)
+# Generate words with errors WORD_COUNT * (same word ERROR_COUNT times, with 0 to ERROR_COUNT errors)
 
 import random
 
 WORD_COUNT = 100
+ERROR_COUNT = 4
 
 def apply_random_err(word):
     rand = random.randint(0, 3)
@@ -32,7 +33,7 @@ for _ in range(WORD_COUNT):
     rand = random.randint(0, len(words) - 1)
     word = words[rand][:-1]
 
-    for err in range(0, 5):
+    for err in range(0, ERROR_COUNT + 1):
         cpy = word
 
         for _ in range(err):

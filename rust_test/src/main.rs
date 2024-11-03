@@ -28,14 +28,17 @@ fn main() {
     let args: Vec<String> = std::env::args().collect();
 
     if args.len() != 3 {
-        println!("USAGE: <command> <word>\nCommands: file, bench, test-fast");
+        println!("USAGE: one of the following");
+        println!(" - out <word>: print suggestions on stout, one by line");
+        println!(" - bench <word>: some unorganized benchmarks");
+        println!(" - test-fast <word-list-path>: Test the fest algorithms by comparing it to the slow algorithm. See generate_test_words.py to generate word list.");
         return;
     }
 
     let command = &args[1];
     let input = &args[2];
 
-    if command == "file" {
+    if command == "out" {
         file(input)
     }
     else if command == "bench" {
@@ -76,13 +79,11 @@ fn file(input: &str) {
 
     let mut text = String::with_capacity(CANDIDATES_COUNT * 20);
     for i in 0..CANDIDATES_COUNT {
-        text.push_str(&dict[real_buffer.get(i).word_id]);
-        text.push('\0');
+        println!("{}", &dict[real_buffer.get(i).word_id]);
     }
     text.push('\0');
-    fs::write(".out", text).unwrap();
 
-    println!("Created `.out` file. Total time elapsed: {}ms", start_time.elapsed().as_millis());
+    println!("Total time elapsed: {}ms", start_time.elapsed().as_millis());
 }
 
 fn benchmark(input: &str) {
@@ -96,7 +97,11 @@ fn benchmark(input: &str) {
     benchmark_on_words("Fast dist length", &dict, |w| { fast_dist::fast_dist_len(&input_processed, w); });
     benchmark_on_words("Fast dist count", &dict, |w| { fast_dist::fast_dist_count(&input_processed, w); });
     benchmark_on_words("Fast dist presence", &dict, |w| { fast_dist::fast_dist_pres(&input_processed, w); });
-    benchmark_on_words("Fast dist pairs count", &dict, |w| { fast_dist::fast_dist_pairs_count(&input_processed, w); });
+    benchmark_on_words("Fast dist pairs count (10 times)", &dict, |w| { 
+        for _ in 0..10 {
+            fast_dist::fast_dist_pairs_count(&input_processed, w); 
+        }
+    });
 
     start_time = std::time::Instant::now();
 

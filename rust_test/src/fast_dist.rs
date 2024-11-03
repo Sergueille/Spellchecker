@@ -10,10 +10,13 @@ pub const SUBSTITUTION_COST: f32 = 0.9;
 // -> now considering one byte at a time, with a-z mapped to 0-25 and other codes mapped to 26
 
 
+
 // Things I tried to make things faster
 // -> for pairs, count 27 pars in one u64, with 2bytes/pair (600ms -> 200ms)
 // -> for pairs, preallocate table (not faster)
 // -> for pairs, use [u64; 27] instead of vec (210ms -> 190ms)
+
+const PAIR_MASK: u64 = 0xAAAAAAAAAAAAAAAA;
 
 #[allow(dead_code)]
 pub struct Input<'a> {
@@ -80,10 +83,19 @@ pub fn fast_dist_pairs_count(a: &Input, b: &str) -> u32 {
     let mut res: u32 = 0;
 
     for i in 0..27 {
+        /* Slow way
         for j in 0..27 {
             res += ((table_b[i] >> (j * 2)) & 0b11).abs_diff((a.pair_table[i] >> (j * 2)) & 0b11) as u32;
-            // res += ((table_b[i] >> (j * 2)) & 0b11) as u32;
         }
+        */
+
+        // Fast way: horrible bit hacks
+        let delta_a = a.pair_table[i] ^ (a.pair_table[i] << 1); 
+        let delta_b = table_b[i] ^ (table_b[i] << 1); 
+        let xor = a.pair_table[i] ^ table_b[i];
+
+        res += count_set_bits(xor & !PAIR_MASK, 2 * 27)
+            + 2 * count_set_bits(xor & (!delta_a | !delta_b) & PAIR_MASK, 2 * 27);
     }
 
     return res;
@@ -163,6 +175,20 @@ fn get_char_code(a: char) -> usize {
             return 26;
         }
     }
+}
+
+/// Returns the number of set bits, in the `range` least significant bits.
+/// [http://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetKernighan]
+fn count_set_bits(data: u64, range: usize) -> u32 {
+    let mut masked = data & ((1 << range) - 1);
+    let mut count = 0;
+
+    while masked > 0 {
+        count += 1;
+        masked &= masked - 1;
+    }
+
+    return count;
 }
 
 
